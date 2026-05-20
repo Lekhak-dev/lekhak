@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.env
+*.egg-info/
+dist/
+build/
+.DS_Store
+models/*.bin
+models/*.pt
+data/raw/
+logs/*.log
