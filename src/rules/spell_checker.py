@@ -1,0 +1,105 @@
+"""
+Lekhak — Marathi Spell Checker
+Rule-based spell checker using wordlist dictionary.
+"""
+
+import os
+import unicodedata
+from difflib import get_close_matches
+from typing import List, Dict
+
+
+WORDLIST_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "..", "data", "marathi_wordlist.txt"
+)
+
+
+def load_wordlist(path: str) -> set:
+    """Load Marathi wordlist from file into a set for O(1) lookup."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Wordlist not found at: {path}")
+    
+    with open(path, "r", encoding="utf-8") as f:
+        words = set(
+            line.strip() for line in f
+            if line.strip() and not line.startswith("#")
+        )
+    return words
+
+
+def normalize_word(word: str) -> str:
+    """
+    Normalize a Devanagari word.
+    - Strip punctuation from edges
+    - NFC normalize Unicode (important for Devanagari)
+    """
+    word = unicodedata.normalize("NFC", word)
+    # Strip common punctuation from edges
+    strip_chars = "।॥,.!?\"'();:-–—\u200b\u200c\u200d"
+    word = word.strip(strip_chars)
+    return word
+
+
+def tokenize(text: str) -> List[str]:
+    """Split Marathi text into word tokens."""
+    # Split on whitespace and Devanagari danda (।)
+    import re
+    tokens = re.split(r"[\s।॥]+", text)
+    return [t for t in tokens if t.strip()]
+
+
+def get_suggestions(word: str, wordlist: set, n: int = 3) -> List[str]:
+    """Get close match suggestions for a misspelled word."""
+    suggestions = get_close_matches(word, wordlist, n=n, cutoff=0.6)
+    return suggestions
+
+
+def check_spelling(text: str) -> Dict:
+    """
+    Main spell check function.
+    
+    Args:
+        text: Marathi text string
+        
+    Returns:
+        Dict with keys:
+            - errors: list of misspelled words with positions and suggestions
+            - total_words: int
+            - error_count: int
+    """
+    wordlist = load_wordlist(WORDLIST_PATH)
+    tokens = tokenize(text)
+    
+    errors = []
+    
+    for i, raw_token in enumerate(tokens):
+        word = normalize_word(raw_token)
+        
+        if not word:
+            continue
+        
+        # Skip pure numbers
+        if word.isdigit():
+            continue
+        
+        if word not in wordlist:
+            suggestions = get_suggestions(word, wordlist)
+            errors.append({
+                "word": word,
+                "position": i,
+                "suggestions": suggestions,
+                "message": f"'{word}' हे शब्द शब्दकोशात सापडले नाही."
+            })
+    
+    return {
+        "errors": errors,
+        "total_words": len(tokens),
+        "error_count": len(errors)
+    }
+
+
+# Quick local test
+if __name__ == "__main__":
+    test_text = "मी शाळेत जातो आणि पुस्तक वाचतो"
+    result = check_spelling(test_text)
+    print(result)
