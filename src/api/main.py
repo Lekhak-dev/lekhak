@@ -12,9 +12,12 @@ import os
 # Make sure src is importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.rules.spell_checker import check_spelling
+from src.rules.spell_checker import check_spelling, load_wordlist
+from src.rules.suggester import get_suggestions as get_edit_suggestions
 from src.rules.grammar_checker import check_grammar
 
+# Load wordlist once at startup — not on every request
+_wordlist = load_wordlist()
 app = FastAPI(
     title="Lekhak API",
     description="AI-powered Marathi proofreading engine",
@@ -81,3 +84,25 @@ def check_text(payload: TextInput):
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
+
+class SuggestRequest(BaseModel):
+    word: str
+
+
+class SuggestResponse(BaseModel):
+    word: str
+    suggestions: list
+
+
+@app.post("/suggest", response_model=SuggestResponse)
+def suggest_corrections(request: SuggestRequest):
+    """
+    Returns ranked spelling suggestions for a single Marathi word.
+    Layer 1: edit distance based. Layer 2 will add ML ranking.
+    """
+    word = request.word.strip()
+    if not word:
+        return SuggestResponse(word=word, suggestions=[])
+
+    suggestions = get_edit_suggestions(word, _wordlist)
+    return SuggestResponse(word=word, suggestions=suggestions)
