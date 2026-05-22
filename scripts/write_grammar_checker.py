@@ -1,4 +1,6 @@
-"""
+from pathlib import Path
+
+content = '''"""
 Lekhak — Marathi Grammar Checker (Rule-Based)
 Day 4: 8 rules total (4 existing + 4 new).
 """
@@ -21,7 +23,7 @@ def check_double_spaces(text: str) -> List[Dict]:
 
 def check_missing_danda(text: str) -> List[Dict]:
     errors = []
-    for i, sentence in enumerate(re.split(r"[।\n]", text)):
+    for i, sentence in enumerate(re.split(r"[।\\n]", text)):
         sentence = sentence.strip()
         if sentence and sentence.endswith(".") and not sentence.endswith(".."):
             errors.append({
@@ -42,7 +44,7 @@ def check_repeated_words(text: str) -> List[Dict]:
                 "type": "repeated_word",
                 "word": tokens[i],
                 "position": i,
-                "message": f"\'{tokens[i]}\' हा शब्द सलग दोनदा आला आहे.",
+                "message": f"\\'{tokens[i]}\\' हा शब्द सलग दोनदा आला आहे.",
                 "suggestion": "एकच शब्द वापरा."
             })
     return errors
@@ -50,7 +52,7 @@ def check_repeated_words(text: str) -> List[Dict]:
 
 def check_sentence_start_capital(text: str) -> List[Dict]:
     errors = []
-    for i, sentence in enumerate(re.split(r"[।.\n]", text)):
+    for i, sentence in enumerate(re.split(r"[।.\\n]", text)):
         sentence = sentence.strip()
         if sentence and sentence[0].isalpha() and sentence[0] == sentence[0].lower() and sentence[0].isascii():
             errors.append({
@@ -65,7 +67,7 @@ def check_sentence_start_capital(text: str) -> List[Dict]:
 def check_question_mark(text: str) -> List[Dict]:
     errors = []
     question_words = ["कोण", "काय", "कुठे", "केव्हा", "कसे", "किती", "का"]
-    for i, sentence in enumerate(re.split(r"[।\n]", text)):
+    for i, sentence in enumerate(re.split(r"[।\\n]", text)):
         sentence = sentence.strip()
         if not sentence:
             continue
@@ -84,9 +86,9 @@ def check_multiple_punctuation(text: str) -> List[Dict]:
     errors = []
     patterns = [
         (r"।।+", "दुहेरी दंड (।।) वापरू नका."),
-        (r"\?\?+", "दुहेरी प्रश्नचिन्ह (??) वापरू नका."),
+        (r"\\?\\?+", "दुहेरी प्रश्नचिन्ह (??) वापरू नका."),
         (r"!!+", "दुहेरी उद्गारचिन्ह (!!) वापरू नका."),
-        (r"\.\. (?!\.)", "दुहेरी पूर्णविराम (..) वापरू नका."),
+        (r"\\.\\. (?!\\.)", "दुहेरी पूर्णविराम (..) वापरू नका."),
     ]
     for pattern, message in patterns:
         for m in re.finditer(pattern, text):
@@ -114,7 +116,7 @@ def check_space_before_danda(text: str) -> List[Dict]:
 
 def check_mixed_script_spacing(text: str) -> List[Dict]:
     errors = []
-    pattern = r"([\u0900-\u097F])([A-Za-z])|([A-Za-z])([\u0900-\u097F])"
+    pattern = r"([\\u0900-\\u097F])([A-Za-z])|([A-Za-z])([\\u0900-\\u097F])"
     for m in re.finditer(pattern, text):
         errors.append({
             "type": "mixed_script_no_space",
@@ -137,3 +139,7 @@ def check_grammar(text: str) -> Dict:
     errors.extend(check_space_before_danda(text))
     errors.extend(check_mixed_script_spacing(text))
     return {"errors": errors, "error_count": len(errors)}
+'''
+
+Path("src/rules/grammar_checker.py").write_text(content, encoding="utf-8")
+print("grammar_checker.py written successfully.")

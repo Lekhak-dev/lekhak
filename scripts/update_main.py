@@ -1,4 +1,6 @@
-"""
+from pathlib import Path
+
+content = '''"""
 Lekhak - FastAPI Main Application
 POST /check  - spelling + grammar analysis
 POST /suggest - ranked suggestions (edit distance or MuRIL)
@@ -115,3 +117,7 @@ def suggest_corrections(request: SuggestRequest):
             raise HTTPException(status_code=500, detail=f"MuRIL ranking error: {str(e)}")
 
     return SuggestResponse(word=word, suggestions=candidates, ranking_mode="edit_distance")
+'''
+
+Path("src/api/main.py").write_text(content, encoding="utf-8")
+print("main.py updated.")

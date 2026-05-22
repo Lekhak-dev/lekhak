@@ -1,40 +1,6 @@
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from pathlib import Path
 
-from src.rules.grammar_checker import (
-    check_grammar,
-    check_double_spaces,
-    check_repeated_words,
-    check_missing_danda
-)
-
-
-def test_double_space_detected():
-    result = check_double_spaces("मी  घरी आहे")
-    assert len(result) == 1
-    assert result[0]["type"] == "double_space"
-
-
-def test_no_double_space():
-    result = check_double_spaces("मी घरी आहे")
-    assert len(result) == 0
-
-
-def test_repeated_word_detected():
-    result = check_repeated_words("मी मी घरी जातो")
-    assert len(result) >= 1
-    assert result[0]["type"] == "repeated_word"
-
-
-def test_missing_danda_detected():
-    result = check_missing_danda("मी घरी जातो.")
-    assert any(e["type"] == "wrong_punctuation" for e in result)
-
-
-def test_full_grammar_check():
-    text = "मी मी घरी जातो.  तू शाळेत जातो।"
-    result = check_grammar(text)
-    assert result["error_count"] > 0
+new_tests = '''
 
 # ── Day 4: New rule tests ──────────────────────────────────────────────────────
 
@@ -67,3 +33,13 @@ def test_mixed_script_no_space_detected():
     result = check_grammar("मीschool जातो।")
     types = [e["type"] for e in result["errors"]]
     assert "mixed_script_no_space" in types
+'''
+
+path = Path("tests/test_grammar_checker.py")
+current = path.read_text(encoding="utf-8")
+
+if "test_missing_question_mark_detected" in current:
+    print("Tests already present — skipping.")
+else:
+    path.write_text(current + new_tests, encoding="utf-8")
+    print("6 new tests appended to test_grammar_checker.py")
