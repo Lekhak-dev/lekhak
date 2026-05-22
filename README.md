@@ -35,7 +35,8 @@ Lekhak follows a layered architecture:
 - HuggingFace Transformers
 - MuRIL
 - SQLite now, PostgreSQL later
-- Railway, HuggingFace Spaces, and Vercel planned for deployment paths
+- Railway live for API deployment
+- HuggingFace Spaces and Vercel planned for later deployment paths
 
 ## Day 1 Status
 
@@ -138,6 +139,57 @@ Result:
 - `/suggest` endpoint working.
 - ML direction clarified for Day 4.
 
+## Day 4 Status
+
+Completed:
+
+- Expanded the Marathi wordlist to 626 words.
+- Added wordlist builder scripts:
+  - `scripts/build_wordlist.py`
+  - `scripts/topup_wordlist.py`
+- Added 4 new grammar rules:
+  - missing question mark detection
+  - multiple punctuation detection
+  - space before danda detection
+  - mixed Devanagari/English spacing detection
+- Increased grammar coverage from 4 rules to 8 rules.
+- Expanded the test suite from 15 tests to 21 tests.
+- Created `src/rules/muril_ranker.py` for Layer 2 contextual ranking.
+- Upgraded `/suggest` to support:
+  - default edit-distance ranking
+  - optional MuRIL ranking with `ml_ranking=true`
+  - required sentence context for ML ranking
+  - `ranking_mode` in the API response
+- Created a Railway `Procfile`.
+- Replaced `pip freeze` output with a curated Railway-safe `requirements.txt`.
+- Deployed the API to Railway.
+
+Key ML/API behavior:
+
+- Default `/suggest` behavior remains lightweight edit-distance ranking.
+- MuRIL ranking is available locally through `ml_ranking=true`.
+- MuRIL requires a `sentence` field because contextual ranking is impossible without context.
+- If `ml_ranking=true` is sent without a sentence, the API returns a `400` error.
+
+Deployment result:
+
+- Railway API is live at `https://web-production-9e1c4.up.railway.app`.
+- `/health` validated successfully.
+- `/check` validated successfully on the live deployment.
+- MuRIL is intentionally not relied on for Railway production because the model is large and better suited to HuggingFace Spaces or a larger deployment target.
+
+Latest verified test result:
+
+- `21 passed in 0.56s`
+
+Architecture decisions:
+
+- Curated `requirements.txt` is required for deployment.
+- Do not use `pip freeze > requirements.txt` for Railway because it captures Windows-only and development packages.
+- MuRIL remains a local Layer 2 ranker for now.
+- Railway production deployment currently prioritizes the stable rule engine.
+- PowerShell API tests with Marathi text should use explicit UTF-8 byte bodies.
+
 ## Current Project Structure
 
 ```text
@@ -147,20 +199,39 @@ C:\Users\Kshitij\lekhak\
 |-- frontend\
 |   `-- app.py
 |-- logs\
+|   |-- day1.md
+|   |-- day2.md
+|   |-- day3.md
+|   `-- day4.md
 |-- models\
 |-- notebooks\
 |   `-- indicbert_explore.ipynb
+|-- scripts\
+|   |-- build_wordlist.py
+|   |-- topup_wordlist.py
+|   |-- update_main.py
+|   |-- write_grammar_checker.py
+|   |-- write_grammar_tests.py
+|   |-- write_muril_ranker.py
+|   |-- write_procfile.py
+|   |-- write_requirements.py
+|   `-- test_suggest.py
 |-- tests\
+|   |-- test_api.py
 |   |-- test_spell_checker.py
 |   |-- test_grammar_checker.py
 |   `-- test_suggest.py
+|-- Procfile
+|-- README.md
+|-- requirements.txt
 `-- src\
     |-- api\
     |   `-- main.py
     |-- rules\
     |   |-- spell_checker.py
     |   |-- grammar_checker.py
-    |   `-- suggester.py
+    |   |-- suggester.py
+    |   `-- muril_ranker.py
     `-- utils\
 ```
 
@@ -181,14 +252,26 @@ python frontend/app.py
 Run tests:
 
 ```powershell
-pytest tests/ -v
+.\venv\Scripts\python.exe -m pytest tests/ -v
 ```
 
-## Day 4 Next Goals
+Test live API:
 
-- Expand Marathi wordlist toward 500+ words.
-- Add more grammar rules.
-- Deploy backend to Railway.
-- Implement MuRIL candidate scoring.
-- Add optional ML ranking to `/suggest`.
-- Compare edit-distance ranking vs MuRIL contextual ranking.
+```powershell
+Invoke-RestMethod -Uri "https://web-production-9e1c4.up.railway.app/health"
+```
+
+For Marathi JSON bodies in PowerShell, send UTF-8 bytes:
+
+```powershell
+$body = [System.Text.Encoding]::UTF8.GetBytes('{"text": "मी शाळेत जातो।"}')
+Invoke-RestMethod -Uri "https://web-production-9e1c4.up.railway.app/check" -Method POST -ContentType "application/json; charset=utf-8" -Body $body
+```
+
+## Day 5 Next Goals
+
+- Update Gradio frontend to support local vs Railway backend.
+- Return spelling suggestions inline in `/check` results.
+- Add character offsets and word indexes for frontend highlighting.
+- Add Marathi morphological suffix handling to reduce false positives.
+- Explore HuggingFace Spaces deployment for Gradio and MuRIL-friendly hosting.
