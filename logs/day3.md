@@ -111,3 +111,31 @@ pytest tests/ -v
 git add .
 git commit -m "message"
 git push
+
+---
+
+## Current Project Structure
+
+```text
+C:\Users\Kshitij\lekhak\
+├── data/
+│   └── marathi_wordlist.txt
+├── frontend/
+│   └── app.py
+├── logs/
+├── models/
+├── notebooks/
+│   └── indicbert_explore.ipynb
+├── tests/
+│   ├── test_spell_checker.py
+│   ├── test_grammar_checker.py
+│   └── test_suggest.py
+└── src/
+    ├── api/
+    │   └── main.py
+    ├── rules/
+    │   ├── spell_checker.py
+    │   ├── grammar_checker.py
+    │   └── suggester.py
+    └── utils/
+```

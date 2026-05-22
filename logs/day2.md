@@ -29,3 +29,40 @@
 - Build Gradio frontend UI
 - Connect Gradio to FastAPI backend
 - Begin exploring IndicBERT
+
+---
+
+## Current Project Structure
+
+```text
+C:\Users\Kshitij\lekhak\
+│   .env
+│   .gitignore
+│   README.md
+│   requirements.txt
+│
+├───data
+│       marathi_wordlist.txt
+├───frontend
+├───logs
+│       day1.md
+│       day2.md
+├───models
+├───notebooks
+├───tests
+│       __init__.py
+│       test_api.py
+│       test_spell_checker.py
+│       test_grammar_checker.py
+└───src
+    │   __init__.py
+    ├───api
+    │       __init__.py
+    │       main.py
+    ├───rules
+    │       __init__.py
+    │       spell_checker.py
+    │       grammar_checker.py
+    └───utils
+            __init__.py
+```

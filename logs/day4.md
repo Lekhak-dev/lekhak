@@ -195,3 +195,51 @@ git add .
 git commit -m "message"
 git push origin main
 ```
+
+---
+
+## Current Project Structure
+
+```text
+C:\Users\Kshitij\lekhak\
+|-- data\
+|   `-- marathi_wordlist.txt
+|-- frontend\
+|   `-- app.py
+|-- logs\
+|   |-- day1.md
+|   |-- day2.md
+|   |-- day3.md
+|   `-- day4.md
+|-- models\
+|-- notebooks\
+|   `-- indicbert_explore.ipynb
+|-- scripts\
+|   |-- build_wordlist.py
+|   |-- test_suggest.py
+|   |-- topup_wordlist.py
+|   |-- update_main.py
+|   |-- write_grammar_checker.py
+|   |-- write_grammar_tests.py
+|   |-- write_muril_ranker.py
+|   |-- write_procfile.py
+|   |-- write_requirements.py
+|   `-- write_test_suggest.py
+|-- tests\
+|   |-- test_api.py
+|   |-- test_grammar_checker.py
+|   |-- test_spell_checker.py
+|   `-- test_suggest.py
+|-- Procfile
+|-- README.md
+|-- requirements.txt
+`-- src\
+    |-- api\
+    |   `-- main.py
+    |-- rules\
+    |   |-- grammar_checker.py
+    |   |-- muril_ranker.py
+    |   |-- spell_checker.py
+    |   `-- suggester.py
+    `-- utils\
+```
