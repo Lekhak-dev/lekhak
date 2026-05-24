@@ -1,4 +1,6 @@
-import sys, os
+from pathlib import Path
+
+content = '''import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from src.rules.grammar_checker import (
     check_grammar,
@@ -58,3 +60,7 @@ def test_mixed_script_no_space_detected():
     result = check_grammar("मीschool जातो।")
     types = [e["type"] for e in result["errors"]]
     assert "mixed_script_no_space" in types
+'''
+
+Path("tests/test_grammar_checker.py").write_text(content, encoding="utf-8")
+print("tests/test_grammar_checker.py fixed.")

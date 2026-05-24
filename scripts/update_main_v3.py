@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional
 import unicodedata
-import re
 
 from src.rules.spell_checker import check_spelling, load_wordlist
 from src.rules.grammar_checker import check_grammar
@@ -16,6 +15,7 @@ app = FastAPI(
 
 _wordlist = load_wordlist()
 
+# ── Request/Response models ──────────────────────────────────────────────────
 
 class CheckRequest(BaseModel):
     text: str
@@ -43,6 +43,7 @@ class SuggestResponse(BaseModel):
     suggestions: list[str]
     ranking_mode: str
 
+# ── Endpoints ────────────────────────────────────────────────────────────────
 
 @app.get("/")
 def root():
@@ -55,21 +56,27 @@ def health():
 @app.post("/check", response_model=CheckResponse)
 def check(request: CheckRequest):
     text = unicodedata.normalize("NFC", request.text)
+
     spell_result = check_spelling(text, _wordlist)
     grammar_result = check_grammar(text)
 
+    # Build enriched spelling errors with suggestions + char offsets
     enriched_errors = []
     for err in spell_result["errors"]:
         word = err["word"]
         word_index = err["index"]
+
+        # Compute char_offset: find position of this word occurrence in text
+        # We find the nth occurrence matching word_index
         char_offset = _find_char_offset(text, word, word_index)
-        raw_suggestions = get_suggestions(word, list(_wordlist))
-        suggestions = [s["word"] for s in raw_suggestions]
+
+        suggestions = get_suggestions(word, list(_wordlist))
+
         enriched_errors.append(SpellingErrorDetail(
             word=word,
             index=word_index,
             char_offset=char_offset,
-            suggestions=suggestions[:5]
+            suggestions=suggestions[:5]  # top 5 only
         ))
 
     return CheckResponse(
@@ -87,23 +94,42 @@ def suggest(request: SuggestRequest):
     if request.ml_ranking and request.sentence:
         try:
             from src.rules.muril_ranker import rank_candidates_by_context
-            candidates = [s["word"] for s in get_suggestions(word, list(_wordlist))]
+            candidates = get_suggestions(word, list(_wordlist))
             ranked = rank_candidates_by_context(word, request.sentence, candidates)
             return SuggestResponse(
                 word=word,
                 suggestions=[r["word"] for r in ranked],
                 ranking_mode="ml_contextual"
             )
-        except Exception:
-            suggestions = [s["word"] for s in get_suggestions(word, list(_wordlist))]
-            return SuggestResponse(word=word, suggestions=suggestions, ranking_mode="edit_distance_fallback")
+        except Exception as e:
+            # Fallback to edit distance if MuRIL unavailable (Railway)
+            suggestions = get_suggestions(word, list(_wordlist))
+            return SuggestResponse(
+                word=word,
+                suggestions=suggestions,
+                ranking_mode="edit_distance_fallback"
+            )
 
-    suggestions = [s["word"] for s in get_suggestions(word, list(_wordlist))]
-    return SuggestResponse(word=word, suggestions=suggestions, ranking_mode="edit_distance")
+    suggestions = get_suggestions(word, list(_wordlist))
+    return SuggestResponse(
+        word=word,
+        suggestions=suggestions,
+        ranking_mode="edit_distance"
+    )
 
+# ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _find_char_offset(text: str, word: str, word_index: int) -> int:
-    tokens_with_pos = [(m.group(), m.start()) for m in re.finditer(r'[^\s।]+', text)]
+    """
+    Find the character offset of the word at position word_index in text.
+    Tokenizes by whitespace + danda to match spell checker tokenization.
+    """
+    import re
+    # Split on whitespace and danda (।), keeping track of positions
+    tokens_with_pos = []
+    for m in re.finditer(r'[^\s।]+', text):
+        tokens_with_pos.append((m.group(), m.start()))
+
     if word_index < len(tokens_with_pos):
         return tokens_with_pos[word_index][1]
     return -1

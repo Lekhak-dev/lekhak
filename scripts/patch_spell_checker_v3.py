@@ -1,4 +1,6 @@
-"""
+from pathlib import Path
+
+content = '''"""
 Lekhak — Marathi Spell Checker
 Rule-based spell checker using wordlist + morphological suffix stripping.
 """
@@ -33,13 +35,13 @@ def load_wordlist() -> set:
 def normalize_word(word: str) -> str:
     """Strip punctuation edges and NFC normalize."""
     word = unicodedata.normalize("NFC", word)
-    strip_chars = "।॥,.!?\"'();:-—–\u200b\u200c\u200d"
+    strip_chars = "।॥,.!?\\\"\'();:-—–\\u200b\\u200c\\u200d"
     word = word.strip(strip_chars)
     return word
 
 def tokenize(text: str) -> List[str]:
     """Split Marathi text into word tokens."""
-    tokens = re.split(r"[\s।॥]+", text)
+    tokens = re.split(r"[\\s।॥]+", text)
     return [t for t in tokens if t.strip()]
 
 def check_spelling(text: str, wordlist: Optional[set] = None) -> Dict:
@@ -64,7 +66,7 @@ def check_spelling(text: str, wordlist: Optional[set] = None) -> Dict:
             errors.append({
                 "word": word,
                 "index": i,
-                "message": f"\'{word}\' हे शब्द शब्दकोशात सापडले नाही."
+                "message": f"\\'{word}\\' हे शब्द शब्दकोशात सापडले नाही."
             })
 
     return {
@@ -78,7 +80,7 @@ if __name__ == "__main__":
     tests = [
         ("मी शाळेत जातो",     0),   # शाळा + ेत
         ("मी घरात आहे",       0),   # घर + ात
-        ("मुलाला पुस्तक आण", 0),   # मुलाला in wordlist; पुस्तक in wordlist; आण common
+        ("मुलाला पुस्तक दे",  0),   # मुल + ाला
         ("मी घरि जातो",       1),   # no valid root — should fail
     ]
     print("Suffix stripping tests:")
@@ -92,3 +94,7 @@ if __name__ == "__main__":
         print(f"  {text!r:35} → {status}")
     print()
     print("All tests passed." if all_pass else "Some tests FAILED — check suffix list.")
+'''
+
+Path("src/rules/spell_checker.py").write_text(content, encoding="utf-8")
+print("src/rules/spell_checker.py written.")

@@ -1,4 +1,6 @@
-import gradio as gr
+from pathlib import Path
+
+content = r'''import gradio as gr
 import requests
 import unicodedata
 
@@ -143,3 +145,7 @@ with gr.Blocks(title="Lekhak — मराठी प्रूफरीडर", t
         )
 
 demo.launch(server_name="0.0.0.0", server_port=7860)
+'''
+
+Path("frontend/app.py").write_text(content, encoding="utf-8")
+print("frontend/app.py updated — formatting fixed.")    

@@ -1,35 +1,36 @@
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+import unicodedata
+from src.rules.spell_checker import check_spelling, load_wordlist, normalize_word, tokenize
 
-from src.rules.spell_checker import check_spelling, normalize_word, tokenize
-
+_wordlist = load_wordlist()
 
 def test_correct_sentence_no_errors():
-    text = "मी घरी आहे"
-    result = check_spelling(text)
+    result = check_spelling("मी घरी आहे", _wordlist)
     assert result["error_count"] == 0
 
-
 def test_misspelled_word_detected():
-    text = "मी घरि आहे"   # घरि is wrong, घरी is correct
-    result = check_spelling(text)
+    result = check_spelling("मी घरि जातो", _wordlist)
     assert result["error_count"] >= 1
-
+    words = [e["word"] for e in result["errors"]]
+    assert "घरि" in words
 
 def test_normalize_word_strips_punctuation():
-    assert normalize_word("शाळा।") == "शाळा"
-    assert normalize_word("घर,") == "घर"
-
+    assert normalize_word("घरी.") == "घरी"
+    assert normalize_word("।मी।") == "मी"
 
 def test_tokenize_splits_correctly():
-    tokens = tokenize("मी जातो। तू येतो।")
+    tokens = tokenize("मी घरी जातो।")
     assert "मी" in tokens
-    assert "जातो" in tokens
+    assert "घरी" in tokens
 
+def test_error_dict_has_index():
+    result = check_spelling("मी घरि जातो", _wordlist)
+    assert result["error_count"] >= 1
+    err = result["errors"][0]
+    assert "index" in err
+    assert isinstance(err["index"], int)
 
-def test_suggestions_returned_for_typo():
-    text = "मि शाळेत जातो"   # मि instead of मी
-    result = check_spelling(text)
-    errors = result["errors"]
-    if errors:
-        assert isinstance(errors[0]["suggestions"], list)
+def test_wordlist_accepts_preloaded():
+    # Verify check_spelling works with pre-loaded wordlist (no disk read)
+    wl = load_wordlist()
+    result = check_spelling("मी घरी आहे", wl)
+    assert result["error_count"] == 0

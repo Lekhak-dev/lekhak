@@ -15,6 +15,7 @@ Lekhak follows a layered architecture:
    - Grammar rules
    - Punctuation rules
    - Unicode NFC normalization
+   - Marathi suffix stripping for common inflected forms
 
 2. Layer 2: Contextual ML ranking
    - Model selected for exploration: `google/muril-base-cased`
@@ -190,6 +191,61 @@ Architecture decisions:
 - Railway production deployment currently prioritizes the stable rule engine.
 - PowerShell API tests with Marathi text should use explicit UTF-8 byte bodies.
 
+## Day 5 Status
+
+Completed:
+
+- Upgraded API to `v0.3.0`.
+- `/check` now returns inline spelling suggestions.
+- `/check` now returns word index and character offset for each spelling error.
+- Refactored `spell_checker.py` so it detects errors only.
+- Moved suggestion composition into the API layer.
+- Added optional pre-loaded wordlist support to `check_spelling()`.
+- Created `src/rules/suffix_stripper.py`.
+- Added Marathi suffix stripping for common inflected forms.
+- Expanded the wordlist to 641 words.
+- Removed the period-vs-danda grammar rule because it produced high false positives for digital Marathi users.
+- Reduced active grammar rules from 8 to 7.
+- Updated Gradio frontend to v2 with:
+  - local/production backend toggle
+  - inline spelling suggestions
+  - grammar error display
+  - defensive schema handling during deployment transitions
+- Updated tests for the v0.3.0 API response shape.
+
+Current API behavior:
+
+- `GET /health` returns API status and version.
+- `POST /check` returns:
+  - `spelling_errors`
+  - `grammar_errors`
+  - `total_words`
+  - `spelling_error_count`
+  - `grammar_error_count`
+- Each spelling error includes:
+  - `word`
+  - `index`
+  - `char_offset`
+  - `suggestions`
+- `POST /suggest` still supports:
+  - edit-distance ranking
+  - optional MuRIL contextual ranking
+  - `ranking_mode`
+
+Latest verified test result:
+
+- `24 passed in 0.52s`
+
+Architecture decisions:
+
+- Spell checker detects only; it does not generate suggestions.
+- `suggester.py` generates candidates.
+- `main.py` composes spelling errors with suggestions for API responses.
+- Suffix stripping is part of Layer 1 validation.
+- Missing root words are fixed through wordlist expansion, not suffix stripping.
+- False positives are worse than missing optional style rules.
+- Period vs danda may return later as opt-in formal writing mode.
+
 ## Current Project Structure
 
 ```text
@@ -202,19 +258,37 @@ C:\Users\Kshitij\lekhak\
 |   |-- day1.md
 |   |-- day2.md
 |   |-- day3.md
-|   `-- day4.md
+|   |-- day4.md
+|   `-- day5.md
 |-- models\
 |-- notebooks\
 |   `-- indicbert_explore.ipynb
 |-- scripts\
 |   |-- build_wordlist.py
+|   |-- debug_aan.py
+|   |-- debug_unicode.py
+|   |-- fix_frontend.py
+|   |-- fix_frontend_v2.py
+|   |-- fix_grammar_tests.py
+|   |-- fix_main_suggestions.py
+|   |-- fix_suffix_test.py
+|   |-- patch_spell_checker.py
+|   |-- patch_spell_checker_v2.py
+|   |-- patch_spell_checker_v3.py
+|   |-- remove_danda_rule.py
 |   |-- topup_wordlist.py
 |   |-- update_main.py
+|   |-- update_main_v3.py
+|   |-- update_tests.py
+|   |-- write_frontend_v2.py
 |   |-- write_grammar_checker.py
 |   |-- write_grammar_tests.py
+|   |-- write_main_v3.py
 |   |-- write_muril_ranker.py
 |   |-- write_procfile.py
 |   |-- write_requirements.py
+|   |-- write_suffix_stripper.py
+|   |-- write_test_suggest.py
 |   `-- test_suggest.py
 |-- tests\
 |   |-- test_api.py
@@ -231,6 +305,7 @@ C:\Users\Kshitij\lekhak\
     |   |-- spell_checker.py
     |   |-- grammar_checker.py
     |   |-- suggester.py
+    |   |-- suffix_stripper.py
     |   `-- muril_ranker.py
     `-- utils\
 ```
@@ -268,10 +343,11 @@ $body = [System.Text.Encoding]::UTF8.GetBytes('{"text": "मी शाळेत 
 Invoke-RestMethod -Uri "https://web-production-9e1c4.up.railway.app/check" -Method POST -ContentType "application/json; charset=utf-8" -Body $body
 ```
 
-## Day 5 Next Goals
+## Day 6 Next Goals
 
-- Update Gradio frontend to support local vs Railway backend.
-- Return spelling suggestions inline in `/check` results.
-- Add character offsets and word indexes for frontend highlighting.
-- Add Marathi morphological suffix handling to reduce false positives.
-- Explore HuggingFace Spaces deployment for Gradio and MuRIL-friendly hosting.
+- Validate Railway `v0.3.0` deployment.
+- Test Gradio against the production Railway backend.
+- Expand wordlist systematically to 1000+ common Marathi words.
+- Add dedicated tests for `src/rules/suffix_stripper.py`.
+- Use `char_offset` for in-text frontend highlighting.
+- Explore HuggingFace Spaces for Gradio and MuRIL-friendly hosting.

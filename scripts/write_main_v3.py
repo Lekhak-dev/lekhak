@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from pathlib import Path
+
+content = r'''from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional
 import unicodedata
@@ -63,8 +65,7 @@ def check(request: CheckRequest):
         word = err["word"]
         word_index = err["index"]
         char_offset = _find_char_offset(text, word, word_index)
-        raw_suggestions = get_suggestions(word, list(_wordlist))
-        suggestions = [s["word"] for s in raw_suggestions]
+        suggestions = get_suggestions(word, list(_wordlist))
         enriched_errors.append(SpellingErrorDetail(
             word=word,
             index=word_index,
@@ -87,7 +88,7 @@ def suggest(request: SuggestRequest):
     if request.ml_ranking and request.sentence:
         try:
             from src.rules.muril_ranker import rank_candidates_by_context
-            candidates = [s["word"] for s in get_suggestions(word, list(_wordlist))]
+            candidates = get_suggestions(word, list(_wordlist))
             ranked = rank_candidates_by_context(word, request.sentence, candidates)
             return SuggestResponse(
                 word=word,
@@ -95,10 +96,10 @@ def suggest(request: SuggestRequest):
                 ranking_mode="ml_contextual"
             )
         except Exception:
-            suggestions = [s["word"] for s in get_suggestions(word, list(_wordlist))]
+            suggestions = get_suggestions(word, list(_wordlist))
             return SuggestResponse(word=word, suggestions=suggestions, ranking_mode="edit_distance_fallback")
 
-    suggestions = [s["word"] for s in get_suggestions(word, list(_wordlist))]
+    suggestions = get_suggestions(word, list(_wordlist))
     return SuggestResponse(word=word, suggestions=suggestions, ranking_mode="edit_distance")
 
 
@@ -107,3 +108,7 @@ def _find_char_offset(text: str, word: str, word_index: int) -> int:
     if word_index < len(tokens_with_pos):
         return tokens_with_pos[word_index][1]
     return -1
+'''
+
+Path("src/api/main.py").write_text(content, encoding="utf-8")
+print("src/api/main.py written — v0.3.0")
